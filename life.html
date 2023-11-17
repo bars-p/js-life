@@ -11,11 +11,13 @@
       <div class="board-info">
         <div class="info-item">
           Population:
-          <span id="population">362362 (17%)</span>
+          <span id="population"
+            ><strong>362362</strong> (<strong>17%</strong>)</span
+          >
         </div>
         <div class="info-item">
           Trend:
-          <span id="trend">Growing +5%</span>
+          <span id="trend">🟢 Growing <strong>+5%</strong></span>
         </div>
       </div>
       <div class="canvas">
@@ -24,7 +26,48 @@
     </div>
     <div id="controls">
       <div class="control-block">
-        <button id="set-size">Set size</button>
+        <div class="board-setup">
+          <h4>Board setup:</h4>
+          <label class="lbl" for="rows">Rows:</label>
+          <input
+            class="inp"
+            type="number"
+            name="rows"
+            id="rows"
+            placeholder="0"
+            min="0"
+            value="100"
+          />
+          <label class="lbl" for="cols">Columns:</label>
+          <input
+            class="inp"
+            type="number"
+            name="cols"
+            id="cols"
+            placeholder="0"
+            min="0"
+            value="100"
+          />
+          <button class="small-button" id="set-size">Set size</button>
+        </div>
+        <div class="generation">
+          <h4>Population:</h4>
+          <label class="lbl" for="density">Density: </label>
+          <input
+            class="rng"
+            type="range"
+            name="density"
+            id="density"
+            min="1"
+            max="99"
+            value="50"
+          />
+          <button class="btn small-button" id="random">Random</button>
+          <button class="btn small-button" id="draw">Draw</button>
+        </div>
+        <div class="start">
+          <button id="action" class="big-button ready">Start</button>
+        </div>
       </div>
       <div class="logger">
         <p>
