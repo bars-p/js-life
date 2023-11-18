@@ -11,10 +11,6 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* #canvas {
-border: 1px solid grey;
-background: lightgrey;
-} */
 #board {
   display: flex;
   flex-grow: 1;
@@ -22,7 +18,7 @@ background: lightgrey;
   height: 2;
 }
 #controls {
-  background-color: gold;
+  background-color: ghostwhite;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -42,18 +38,6 @@ background: lightgrey;
 .rng {
   width: 120px;
 }
-.btn {
-  border: 1px solid darkblue;
-}
-.btn:hover {
-  cursor: pointer;
-  border: 1px solid black;
-  box-shadow: 3px 3px darkgrey;
-}
-.btn:active {
-  border: 2px solid black;
-  box-shadow: 0px 0px darkgrey;
-}
 
 .big-button {
   font-size: x-large;
@@ -63,6 +47,8 @@ background: lightgrey;
   display: inline-flex;
   justify-content: center;
   align-items: center;
+  border-radius: 10px;
+  border: 0px;
 }
 .small-button {
   font-size: medium;
@@ -87,7 +73,7 @@ background: lightgrey;
 }
 
 .control-block {
-  background-color: beige;
+  /* background-color: beige; */
   display: flex;
   flex-direction: column;
   margin-top: var(--magic-value);
@@ -96,19 +82,6 @@ background: lightgrey;
   display: flex;
   flex-direction: column;
 }
-/* .board-setup input {
-  width: 120px;
-  font-size: x-large;
-} */
-/* .board-setup button {
-  font-size: x-large;
-  width: 120px;
-  height: 50px;
-  margin-top: 1rem;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-} */
 
 .generation {
   margin-top: 3rem;
@@ -127,19 +100,16 @@ background: lightgrey;
 .ready {
   background-color: green;
   color: azure;
-  border-radius: 10px;
-  border: 0px;
 }
 .ready:hover {
   background-color: lightgreen;
   color: black;
+  cursor: pointer;
 }
 
 .pause {
   background-color: orange;
   color: azure;
-  border-radius: 10px;
-  border: 0px;
 }
 .pause:hover {
   background-color: rgb(248, 199, 35);
@@ -147,21 +117,27 @@ background: lightgrey;
   cursor: pointer;
 }
 
+.action-disabled {
+  background-color: lightgrey;
+  color: azure;
+}
+
 .logger {
-  background-color: beige;
+  background-color: WhiteSmoke;
   /* border: 1px solid grey; */
   height: 200px;
   max-height: 200px;
-  width: 100%S;
+  width: 100%;
   overflow: auto;
   font-size: small;
 }
+.logger p {
+  padding: 2px 4px;
+}
+
 .canvas {
   display: flexbox;
   padding: var(--magic-value);
-  background-color: lightgrey;
+  background-color: grey;
   height: 100%;
-}
-p {
-  padding: 4px;
 }

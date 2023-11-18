@@ -15,10 +15,10 @@
             ><strong>362362</strong> (<strong>17%</strong>)</span
           >
         </div>
-        <div class="info-item">
+        <!-- <div class="info-item">
           Trend:
           <span id="trend">🟢 Growing <strong>+5%</strong></span>
-        </div>
+        </div> -->
       </div>
       <div class="canvas">
         <canvas id="canvas" width="1" height="1"></canvas>
@@ -62,27 +62,16 @@
             max="99"
             value="50"
           />
-          <button class="btn small-button" id="random">Random</button>
-          <button class="btn small-button" id="draw">Draw</button>
+          <button class="small-button" id="random">Random</button>
+          <button class="small-button" id="draw">Draw</button>
         </div>
         <div class="start">
-          <button id="action" class="big-button ready">Start</button>
+          <button id="action" class="big-button action-disabled" disabled>
+            Start
+          </button>
         </div>
       </div>
-      <div class="logger">
-        <p>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur eos,
-          aspernatur eligendi accusantium, sed explicabo voluptatibus illo,
-          tempore pariatur praesentium ipsum! Minima voluptatibus dolor
-          quibusdam accusantium at suscipit perspiciatis fugit?
-        </p>
-        <p>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur eos,
-          aspernatur eligendi accusantium, sed explicabo voluptatibus illo,
-          tempore pariatur praesentium ipsum! Minima voluptatibus dolor
-          quibusdam accusantium at suscipit perspiciatis fugit?
-        </p>
-      </div>
+      <div id="logger" class="logger"></div>
     </div>
     <script src="script.js"></script>
   </body>

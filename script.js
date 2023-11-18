@@ -3,25 +3,29 @@ const controlsWidth = 300;
 
 const cellFull = "black";
 const cellEmpty = "white";
-const cellStroke = "grey";
 
-let canvas = null;
-let ctx = null;
-let sizeBtn = null;
-let actionBtn = null;
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const sizeBtn = document.getElementById("set-size");
+const actionBtn = document.getElementById("action");
+const popInfo = document.getElementById("population");
 
-// let macroMode = true;
+const logger = document.getElementById("logger");
 
 let rows, cols, boardSize;
 let xMax, yMax;
 let cellSide;
 let rowShift, colShift;
 
+let genCounter = 0;
 let population = 0;
-let trend = 0;
+let nexPopulation = 0;
 
 let cells = null;
 let nextCells = null;
+
+let inAction = false;
+let actionProcess = null;
 
 const setupView = () => {
   xMax = window.innerWidth;
@@ -57,15 +61,11 @@ const createBoard = () => {
     canvas.width / 2,
     canvas.height / 2
   );
+  displayPopulation();
+
   if (rows && cols) {
     // Create the board by values set
-    console.log("Drawing the board");
     sizeBtn.innerText = "Reset";
-    // macroMode = canvas.height > cols && canvas.width > rows; // FIXME:
-    // FIXME: Delete MacroMode trails
-    // if (true) {
-    // Board size bigger then cells number - one cell covers several pixels
-    console.log("MacroCells mode");
     const rowsRatio = canvas.height / rows;
     const colsRatio = canvas.width / cols;
 
@@ -79,12 +79,6 @@ const createBoard = () => {
       cellSide = colsRatio;
       rowShift = (canvas.height - cellSide * rows) / 2;
     }
-
-    console.log("CellSide", cellSide);
-    // } else {
-    //   // One pixel covers several cells
-    //   console.log("MicroCells mode");
-    // }
   }
 
   // Create cells matrix
@@ -95,8 +89,6 @@ const createBoard = () => {
     nextCells = Array.from({ length: rows }, () =>
       Array.apply(null, { length: cols }).map(Boolean.prototype.valueOf, false)
     );
-
-    console.log("Cells created:", cells);
   }
 };
 
@@ -125,45 +117,44 @@ const drawCell = (row, col) => {
 const drawCellXY = (x, y, size, filled) => {
   ctx.fillStyle = filled ? cellFull : cellEmpty;
   ctx.fillRect(x, y, size, size);
-  // ctx.strokeRect(x, y, size - 1, size - 1);
 };
 
 const createRandomFirstGeneration = () => {
   if (!(cols && rows)) return;
 
   let density = Math.round(+document.getElementById("density").value);
-  if (density == 0) {
-    console.log("Density not set");
-    return;
-  }
-  if (density > 100) {
-    density = 100;
-    document.getElementById("density").value = 100;
-  }
 
-  console.log("📱 Population create started");
   const started = performance.now();
   const rate = density / 100;
 
-  console.log("🪙 Rate:", rate);
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       cells[row][col] = Boolean(Math.round(Math.random() - (0.5 - rate)));
     }
   }
 
+  let total = 0;
+  for (let r of cells) {
+    for (let c of r) {
+      total += c;
+    }
+  }
+  population = total;
+
   drawBoard();
   const genTime = performance.now() - started;
-  console.log(
-    "📱 Population create finished, took",
-    (genTime / 1000).toFixed(2),
-    "sec"
+
+  logMessage(
+    `Initial state generated in <strong>${(genTime / 1000).toFixed(
+      3
+    )}</strong> seconds.`
   );
+
+  displayPopulation();
+  toggleActionButton(false);
 };
 
 const getCellValue = (row, col) => {
-  // console.log("Get Cell Value (r, c):", row, col);
-  // console.log(cells);
   let cellValue = -cells[row][col];
   for (let r = row - 1; r <= row + 1; r++) {
     const rIdx = r == rows ? 0 : r;
@@ -177,18 +168,10 @@ const getCellValue = (row, col) => {
 };
 
 const calculateNextGeneration = () => {
+  let total = 0;
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       const cellValue = getCellValue(row, col);
-
-      // console.log(
-      //   "Cell (r, c):",
-      //   row,
-      //   col,
-      //   cells[row][col],
-      //   "Value:",
-      //   cellValue
-      // );
 
       if (cells[row][col]) {
         // Live cell
@@ -197,14 +180,14 @@ const calculateNextGeneration = () => {
         // Dead cell
         if (cellValue == 3) nextCells[row][col] = true;
       }
+      total += nextCells[row][col];
     }
   }
+
+  nexPopulation = total;
 };
 
 const updateCellsValues = () => {
-  // TODO: Calculate next population
-  // TODO: Compare current population with next population - trend
-
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       cells[row][col] = nextCells[row][col];
@@ -216,45 +199,136 @@ const processSetSizeClick = () => {
   const rowsNum = Math.round(+document.getElementById("rows").value);
   const colsNum = Math.round(+document.getElementById("cols").value);
 
-  console.log("Entered", rowsNum, colsNum);
   cells = null;
   nextCells = null;
+  population = nexPopulation = genCounter = 0;
+
   setBoardSize(rowsNum, colsNum);
+
+  toggleActionButton(true);
+
+  logMessage(
+    `Board created: <strong>${boardSize.toLocaleString(
+      "ru-RU"
+    )}</strong> cells.`
+  );
 };
 
 const processActionClick = () => {
-  console.log("Action!");
-  const started = performance.now();
+  if (!population) {
+    console.log("Population unset");
+    return;
+  }
 
-  // console.log("Cell value (1, 1):", getCellValue(1, 1));
-  // console.log("Cell value (1, 0):", getCellValue(1, 0));
-  // console.log("Cell value (0, 1):", getCellValue(0, 1));
-  // console.log("Cell value (0, 0):", getCellValue(0, 0));
-  // console.log("Cell value (0, 5):", getCellValue(0, 5));
+  if (inAction) {
+    inAction = false;
+    clearInterval(actionProcess);
+    toggleButtonsState(false);
+    actionBtn.innerText = "Start";
+    actionBtn.classList.remove("pause");
+    actionBtn.classList.add("ready");
+  } else {
+    actionBtn.innerText = "Pause";
+    actionBtn.classList.remove("ready");
+    actionBtn.classList.add("pause");
+    toggleButtonsState(true);
+    inAction = true;
+    actionProcess = setInterval(makeOneTurn, 200);
+  }
+};
+
+const makeOneTurn = () => {
+  const started = performance.now();
 
   calculateNextGeneration();
   updateCellsValues();
+  displayPopulation();
   drawBoard();
 
+  genCounter++;
+
   const genTime = performance.now() - started;
-  console.log("Generation time:", (genTime / 1000).toFixed(3));
+
+  // TODO: Log Event
+  const delta = nexPopulation - population;
+  const rate = ((100 * delta) / population).toFixed(2);
+  let trendInfo = null;
+
+  // console.log("Pop", population, "NextPop", nexPopulation);
+
+  if (delta == 0) {
+    // TODO: Population stable
+    trendInfo = `(<span style="color:orange;">Same.</span>)`;
+  } else if (delta > 0) {
+    // TODO: Population grows
+    trendInfo = `(<span style="color:green;"><strong>+${rate}%</strong></span>)`;
+  } else {
+    // TODO: Population declines
+    trendInfo = `(<span style="color:red;"><strong>${rate}%</strong></span>)`;
+  }
+
+  logMessage(
+    `Gen. ${genCounter.toLocaleString("ru-RU")}: <strong>${(
+      genTime / 1000
+    ).toFixed(
+      3
+    )}</strong> sec. Pop: <strong>${nexPopulation}</strong> ${trendInfo}`
+  );
+
+  population = nexPopulation;
+};
+
+const displayPopulation = () => {
+  const ratio = ((100 * population) / boardSize).toFixed(0);
+
+  let popText = null;
+
+  if (!boardSize) {
+    popText = "---";
+  } else {
+    popText = `<strong>${population.toLocaleString(
+      "ru-RU"
+    )}</strong> (${ratio}%)`;
+  }
+  popInfo.innerHTML = popText;
+};
+
+const toggleButtonsState = (isDisabled) => {
+  sizeBtn.disabled = isDisabled;
+  document.getElementById("random").disabled = isDisabled;
+  document.getElementById("draw").disabled = isDisabled;
+  document.getElementById("density").disabled = isDisabled;
+};
+
+const toggleActionButton = (isDisabled) => {
+  actionBtn.disabled = isDisabled;
+  if (isDisabled) {
+    actionBtn.classList.remove("ready");
+    actionBtn.classList.add("action-disabled");
+  } else {
+    actionBtn.classList.remove("action-disabled");
+    actionBtn.classList.add("ready");
+  }
+};
+
+const logMessage = (msg) => {
+  const el = document.createElement("p");
+  el.innerHTML = msg;
+  logger.prepend(el);
 };
 
 const initialize = () => {
   console.log("🐸 Initializing");
-
   window.addEventListener("resize", setupView);
-  canvas = document.getElementById("canvas");
-  ctx = canvas.getContext("2d");
-  sizeBtn = document.getElementById("set-size");
   sizeBtn.addEventListener("click", processSetSizeClick);
-  actionBtn = document.getElementById("action");
   actionBtn.addEventListener("click", processActionClick);
   document
     .getElementById("random")
     .addEventListener("click", createRandomFirstGeneration);
 
   setupView();
+  displayPopulation();
+  toggleActionButton(true);
 };
 
 initialize();
