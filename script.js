@@ -9,13 +9,14 @@ const ctx = canvas.getContext("2d");
 const sizeBtn = document.getElementById("set-size");
 const actionBtn = document.getElementById("action");
 const popInfo = document.getElementById("population");
-
 const logger = document.getElementById("logger");
 
 let rows, cols, boardSize;
 let xMax, yMax;
 let cellSide;
 let rowShift, colShift;
+let boardTopLeftX, boardTopLeftY;
+let boardDownRightX, boardDownRightY;
 
 let genCounter = 0;
 let population = 0;
@@ -26,12 +27,12 @@ let nextCells = null;
 
 let inAction = false;
 let actionProcess = null;
+let inDrawing = false;
+let drawnRow, drawnCol;
 
 const setupView = () => {
   xMax = window.innerWidth;
   yMax = window.innerHeight;
-
-  console.log("Window Size:", xMax, "by", yMax);
 
   setBoardSize(rows, cols);
 };
@@ -41,23 +42,18 @@ const setBoardSize = (nRows = 0, nCols = 0) => {
   cols = nCols;
   boardSize = rows * cols;
 
-  console.log("Board Size:", rows, "by", cols, "Total:", boardSize);
-
   createBoard();
   drawBoard();
 };
 
 const createBoard = () => {
-  console.log("🤡 Set the canvas and create the board");
-
-  // Set the canvas size
   canvas.width = xMax - controlsWidth - magicValue * 2 - 2;
   canvas.height = yMax - magicValue * 3 - 6;
 
   ctx.font = "32px sans-serif";
   ctx.textAlign = "center";
   ctx.fillText(
-    "Set board size, population and Start!",
+    "Set board, Generate or Draw population and Start!",
     canvas.width / 2,
     canvas.height / 2
   );
@@ -79,9 +75,13 @@ const createBoard = () => {
       cellSide = colsRatio;
       rowShift = (canvas.height - cellSide * rows) / 2;
     }
+    const { x, y } = canvas.getBoundingClientRect();
+    boardTopLeftX = x + colShift;
+    boardTopLeftY = y + rowShift;
+    boardDownRightX = boardTopLeftX + cols * cellSide;
+    boardDownRightY = boardTopLeftY + rows * cellSide;
   }
 
-  // Create cells matrix
   if (!cells) {
     cells = Array.from({ length: rows }, () =>
       Array.apply(null, { length: cols }).map(Boolean.prototype.valueOf, false)
@@ -95,7 +95,7 @@ const createBoard = () => {
 const drawBoard = () => {
   if (!(rows && cols)) return;
 
-  ctx.strokeStyle = "grey";
+  // ctx.strokeStyle = "grey";
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   for (let col = 0; col < cols; col++) {
@@ -215,8 +215,7 @@ const processSetSizeClick = () => {
 };
 
 const processActionClick = () => {
-  if (!population) {
-    console.log("Population unset");
+  if (!population && !inAction) {
     return;
   }
 
@@ -227,6 +226,7 @@ const processActionClick = () => {
     actionBtn.innerText = "Start";
     actionBtn.classList.remove("pause");
     actionBtn.classList.add("ready");
+    displayPopulation();
   } else {
     actionBtn.innerText = "Pause";
     actionBtn.classList.remove("ready");
@@ -249,30 +249,24 @@ const makeOneTurn = () => {
 
   const genTime = performance.now() - started;
 
-  // TODO: Log Event
   const delta = nexPopulation - population;
   const rate = ((100 * delta) / population).toFixed(2);
   let trendInfo = null;
 
-  // console.log("Pop", population, "NextPop", nexPopulation);
-
-  if (delta == 0) {
-    // TODO: Population stable
-    trendInfo = `(<span style="color:orange;">Same.</span>)`;
+  if (delta < 0) {
+    trendInfo = `(<span style="color:red;"><strong>${rate}%</strong></span>)`;
   } else if (delta > 0) {
-    // TODO: Population grows
     trendInfo = `(<span style="color:green;"><strong>+${rate}%</strong></span>)`;
   } else {
-    // TODO: Population declines
-    trendInfo = `(<span style="color:red;"><strong>${rate}%</strong></span>)`;
+    trendInfo = `(<span style="color:orange;">Same</span>)`;
   }
 
   logMessage(
     `Gen. ${genCounter.toLocaleString("ru-RU")}: <strong>${(
       genTime / 1000
-    ).toFixed(
-      3
-    )}</strong> sec. Pop: <strong>${nexPopulation}</strong> ${trendInfo}`
+    ).toFixed(3)}</strong> sec. Pop: <strong>${nexPopulation.toLocaleString(
+      "ru-RU"
+    )}</strong> ${trendInfo}`
   );
 
   population = nexPopulation;
@@ -296,7 +290,7 @@ const displayPopulation = () => {
 const toggleButtonsState = (isDisabled) => {
   sizeBtn.disabled = isDisabled;
   document.getElementById("random").disabled = isDisabled;
-  document.getElementById("draw").disabled = isDisabled;
+  // document.getElementById("draw").disabled = isDisabled;
   document.getElementById("density").disabled = isDisabled;
 };
 
@@ -317,14 +311,74 @@ const logMessage = (msg) => {
   logger.prepend(el);
 };
 
+const processCanvasClick = (e) => {
+  const { row, col } = getCellRC(e.x, e.y);
+  if (row != null && col != null) toggleCell(row, col);
+};
+
+const getCellRC = (x, y) => {
+  let row = null;
+  let col = null;
+
+  if (
+    x >= boardTopLeftX &&
+    y >= boardTopLeftY &&
+    x <= boardDownRightX &&
+    y <= boardDownRightY
+  ) {
+    // Click inside the board
+    row = Math.floor((y - boardTopLeftY) / cellSide);
+    col = Math.floor((x - boardTopLeftX) / cellSide);
+  }
+
+  return { row, col };
+};
+
+const toggleCell = (row, col) => {
+  cells[row][col] = !cells[row][col];
+  drawCell(row, col);
+  if (cells[row][col]) {
+    population++;
+  } else {
+    population--;
+  }
+  displayPopulation();
+  if (population) {
+    toggleActionButton(false);
+  } else {
+    toggleActionButton(true);
+  }
+};
+
+const processCanvasMouseDown = () => {
+  inDrawing = true;
+};
+const processCanvasMouseUp = () => {
+  inDrawing = false;
+  toggleCell(drawnRow, drawnCol);
+};
+const processCanvasMouseMove = (e) => {
+  if (!inDrawing) return;
+
+  const { row, col } = getCellRC(e.x, e.y);
+  if (row != null && col != null && (row != drawnRow || col != drawnCol)) {
+    toggleCell(row, col);
+    drawnRow = row;
+    drawnCol = col;
+  }
+};
+
 const initialize = () => {
-  console.log("🐸 Initializing");
   window.addEventListener("resize", setupView);
   sizeBtn.addEventListener("click", processSetSizeClick);
   actionBtn.addEventListener("click", processActionClick);
   document
     .getElementById("random")
     .addEventListener("click", createRandomFirstGeneration);
+  canvas.addEventListener("click", processCanvasClick);
+  canvas.addEventListener("mousedown", processCanvasMouseDown);
+  canvas.addEventListener("mouseup", processCanvasMouseUp);
+  canvas.addEventListener("mousemove", processCanvasMouseMove);
 
   setupView();
   displayPopulation();

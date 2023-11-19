@@ -18,7 +18,7 @@ body {
   height: 2;
 }
 #controls {
-  background-color: ghostwhite;
+  background-color: white;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -73,7 +73,6 @@ body {
 }
 
 .control-block {
-  /* background-color: beige; */
   display: flex;
   flex-direction: column;
   margin-top: var(--magic-value);
@@ -124,7 +123,6 @@ body {
 
 .logger {
   background-color: WhiteSmoke;
-  /* border: 1px solid grey; */
   height: 200px;
   max-height: 200px;
   width: 100%;
