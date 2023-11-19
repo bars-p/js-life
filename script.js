@@ -28,7 +28,8 @@ let nextCells = null;
 let inAction = false;
 let actionProcess = null;
 let inDrawing = false;
-let drawnRow, drawnCol;
+let drawnRow = null;
+let drawnCol = null;
 
 const setupView = () => {
   xMax = window.innerWidth;
@@ -176,9 +177,11 @@ const calculateNextGeneration = () => {
       if (cells[row][col]) {
         // Live cell
         if (cellValue < 2 || cellValue > 3) nextCells[row][col] = false;
+        else nextCells[row][col] = cells[row][col];
       } else {
         // Dead cell
         if (cellValue == 3) nextCells[row][col] = true;
+        else nextCells[row][col] = cells[row][col];
       }
       total += nextCells[row][col];
     }
@@ -326,7 +329,6 @@ const getCellRC = (x, y) => {
     x <= boardDownRightX &&
     y <= boardDownRightY
   ) {
-    // Click inside the board
     row = Math.floor((y - boardTopLeftY) / cellSide);
     col = Math.floor((x - boardTopLeftX) / cellSide);
   }
@@ -355,7 +357,10 @@ const processCanvasMouseDown = () => {
 };
 const processCanvasMouseUp = () => {
   inDrawing = false;
-  toggleCell(drawnRow, drawnCol);
+  if (drawnRow != null && drawnRow != null) {
+    toggleCell(drawnRow, drawnCol);
+    drawnRow = drawnCol = null;
+  }
 };
 const processCanvasMouseMove = (e) => {
   if (!inDrawing) return;
